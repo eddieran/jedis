@@ -476,6 +476,85 @@ public class RedisJsonV2Test extends RedisModuleCommandsTestBase {
   }
 
   @Test
+  public void numIncrByWithIntegerIncrementReturnsLong() {
+    assumeTrue(protocol == RedisProtocol.RESP3);
+    // Set an integer value
+    jsonV2.jsonSet("numtest", ROOT_PATH, 10);
+
+    // Increment by an integer - should return Long
+    Object result = jsonV2.jsonNumIncrBy("numtest", ROOT_PATH, 5);
+    assertTrue(result instanceof List, "Result should be a List");
+    List<?> resultList = (List<?>) result;
+    assertEquals(1, resultList.size());
+    assertTrue(resultList.get(0) instanceof Long,
+        "Result should be Long but was " + resultList.get(0).getClass().getName());
+    assertEquals(15L, resultList.get(0));
+  }
+
+  @Test
+  public void numIncrByWithDoubleIncrementReturnsDouble() {
+    assumeTrue(protocol == RedisProtocol.RESP3);
+    // Set an integer value
+    jsonV2.jsonSet("numtest", ROOT_PATH, 10);
+
+    // Increment by a double - should return Double
+    Object result = jsonV2.jsonNumIncrBy("numtest", ROOT_PATH, 2.5);
+    assertTrue(result instanceof List, "Result should be a List");
+    List<?> resultList = (List<?>) result;
+    assertEquals(1, resultList.size());
+    assertTrue(resultList.get(0) instanceof Double,
+        "Result should be Double but was " + resultList.get(0).getClass().getName());
+    assertEquals(12.5, resultList.get(0));
+  }
+
+  @Test
+  public void numIncrByPreservesLongForIntegerOperations() {
+    assumeTrue(protocol == RedisProtocol.RESP3);
+    // Set multiple integer values
+    jsonV2.jsonSet("prices", ROOT_PATH, "{\"price1\":100,\"price2\":200,\"price3\":300}");
+
+    // Increment all prices by 10 (integer)
+    Object result = jsonV2.jsonNumIncrBy("prices", Path2.of("$.*"), 10);
+    assertTrue(result instanceof List, "Result should be a List");
+    List<?> resultList = (List<?>) result;
+    assertEquals(3, resultList.size());
+
+    // All results should be Long since we incremented integers by integers
+    for (Object item : resultList) {
+      assertTrue(item instanceof Long,
+          "Result items should be Long but was " + item.getClass().getName());
+    }
+    assertTrue(resultList.contains(110L));
+    assertTrue(resultList.contains(210L));
+    assertTrue(resultList.contains(310L));
+  }
+
+  @Test
+  public void numIncrByConvertsToDoubleWhenNeeded() {
+    assumeTrue(protocol == RedisProtocol.RESP3);
+    // Set an integer value
+    jsonV2.jsonSet("numtest", ROOT_PATH, 100);
+
+    // First increment by integer - should stay Long
+    Object result1 = jsonV2.jsonNumIncrBy("numtest", ROOT_PATH, 50);
+    List<?> resultList1 = (List<?>) result1;
+    assertTrue(resultList1.get(0) instanceof Long, "Should be Long after integer increment");
+    assertEquals(150L, resultList1.get(0));
+
+    // Now increment by double - should convert to Double
+    Object result2 = jsonV2.jsonNumIncrBy("numtest", ROOT_PATH, 0.5);
+    List<?> resultList2 = (List<?>) result2;
+    assertTrue(resultList2.get(0) instanceof Double, "Should be Double after decimal increment");
+    assertEquals(150.5, resultList2.get(0));
+
+    // Further increments should still be Double even if incrementing by integer-like value
+    Object result3 = jsonV2.jsonNumIncrBy("numtest", ROOT_PATH, 1.0);
+    List<?> resultList3 = (List<?>) result3;
+    assertTrue(resultList3.get(0) instanceof Double, "Should remain Double");
+    assertEquals(151.5, resultList3.get(0));
+  }
+
+  @Test
   public void obj() {
     String json = "{\"a\":[3], \"nested\": {\"a\": {\"b\":2, \"c\": 1}}}";
     jsonV2.jsonSet("doc", ROOT_PATH, json);
