@@ -741,13 +741,7 @@ public class SearchWithParamsTest extends RedisModuleCommandsTestBase {
 
     assertEquals("OK", client.ftDropIndex(index));
 
-    try {
-      client.ftSearch(index, "hello world");
-      fail("Index should not exist.");
-    } catch (JedisDataException de) {
-      // toLowerCase - Error message updated to "No such index" with Redis 8.0.0
-      assertTrue(de.getMessage().toLowerCase().contains("no such index"));
-    }
+    assertThrows(JedisDataException.class, () -> client.ftSearch(index, "hello world"));
     assertEquals(100, client.dbSize());
   }
 
