@@ -612,13 +612,8 @@ public class SearchWithParamsTest extends RedisModuleCommandsTestBase {
         FTSearchParams.searchParams().noContent());
     for (Document d : res.getDocuments()) {
       assertTrue(d.getId().startsWith("doc"));
-      if (protocol != RedisProtocol.RESP3) {
-        assertEquals(1.0, d.getScore(), 0);
-        assertNull(d.get("title"));
-      } else {
-        assertNull(d.getScore());
-        assertThrows(NullPointerException.class, () -> d.get("title"));
-      }
+      assertEquals(0.0, d.getScore(), 0);
+      assertNull(d.get("title"));
     }
 
     // test verbatim vs. stemming

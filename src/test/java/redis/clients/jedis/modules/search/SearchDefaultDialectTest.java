@@ -206,13 +206,13 @@ public class SearchDefaultDialectTest extends RedisModuleCommandsTestBase {
       jedis.configSet(configParam, "1");
 
       SearchResult srcResult = client.ftSearch(INDEX, "fo*");
-      assertEqualsByProtocol(protocol, null, Arrays.asList(), srcResult.getWarnings());
+      assertEquals(Arrays.asList(), srcResult.getWarnings());
 
       client.hset("doc23", toMap("t", "fooo", "t2", "fooo"));
 
       AggregationResult aggResult = client.ftAggregate(INDEX, new AggregationBuilder("fo*").loadAll());
       assertEqualsByProtocol(protocol,
-          /* resp2 */ null,
+          /* resp2 */ Arrays.asList(),
           Arrays.asList("Max prefix expansions limit was reached"),
           aggResult.getWarnings());
     } finally {
